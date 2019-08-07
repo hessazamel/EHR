@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 import javax.validation.Valid;
-import javax.websocket.server.PathParam;
-
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,11 +15,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.zamelh.dto.BaseResponseDTO;
 import com.zamelh.dto.GetPatientListResponseDTO;
+import com.zamelh.dto.GetPatientPageableResponseDTO;
 import com.zamelh.dto.GetPatientResponseDTO;
 import com.zamelh.entity.Patient;
 import com.zamelh.service.PatientService;
@@ -29,9 +30,8 @@ public class EhrController {
 	@Autowired
 	PatientService patientService;
 
-	BaseResponseDTO response = new BaseResponseDTO();
-	GetPatientResponseDTO patientResponse = new GetPatientResponseDTO();
-	GetPatientListResponseDTO listResponse = new GetPatientListResponseDTO();
+	//GetPatientResponseDTO patientResponse = new GetPatientResponseDTO();
+	//GetPatientListResponseDTO listResponse = new GetPatientListResponseDTO();
 
 	@RequestMapping("/hello")
 	public String hello() {
@@ -43,6 +43,7 @@ public class EhrController {
 	// @Valid prevents the exception from being caught, as it already validates the
 	// enteries.
 	public GetPatientResponseDTO add(@RequestBody Patient patient) {
+		GetPatientResponseDTO patientResponse = new GetPatientResponseDTO();
 		try {
 			Patient newPatient = patientService.addPatient(patient);
 
@@ -63,61 +64,10 @@ public class EhrController {
 	@PutMapping("/patient/{id}")
 	// @Valid prevents the exception from being caught, as it already validates the
 	// enteries.
-	public GetPatientResponseDTO update(@PathVariable(value = "id") Long patientId,
-			@RequestBody Patient patientDetails) {
+	public GetPatientResponseDTO update(@PathVariable(value = "id") Long patientId, @RequestBody Patient patientDetails) {
+		GetPatientResponseDTO patientResponse = new GetPatientResponseDTO();
 		try {
-			Patient patient = patientService.getPatientById(patientId);
-
-			if (patientDetails.getFirstName() != null) {
-				patient.setFirstName(patientDetails.getFirstName());
-			} else {
-				patient.setFirstName(patient.getFirstName());
-			}
-
-			if (patientDetails.getSecondName() != null) {
-				patient.setSecondName(patientDetails.getSecondName());
-			} else {
-				patient.setSecondName(patient.getSecondName());
-			}
-
-			if (patientDetails.getLastName() != null) {
-				patient.setLastName(patientDetails.getLastName());
-			} else {
-				patient.setLastName(patient.getLastName());
-			}
-
-			if (patientDetails.getDob() != null) {
-				patient.setDob(patientDetails.getDob());
-			} else {
-				patient.setDob(patient.getDob());
-			}
-
-			if (patientDetails.getHeartRate() != 0) {
-				patient.setHeartRate(patientDetails.getHeartRate());
-			} else {
-				patient.setHeartRate(patient.getHeartRate());
-			}
-
-			if (patientDetails.getTemperature() != 0) {
-				patient.setTemperature(patientDetails.getTemperature());
-			} else {
-				patient.setTemperature(patient.getTemperature());
-			}
-
-			if (patientDetails.getSystolicBP() != 0) {
-				patient.setSystolicBP(patientDetails.getSystolicBP());
-			} else {
-				patient.setSystolicBP(patient.getSystolicBP());
-			}
-
-			if (patientDetails.getDiastolicBP() != 0) {
-				patient.setDiastolicBP(patientDetails.getDiastolicBP());
-			} else {
-				patient.setDiastolicBP(patient.getDiastolicBP());
-			}
-
-			Patient updated = patientService.addPatient(patient);
-			// patientService.addPatient(patient);
+			Patient updated = patientService.updatePatient(patientId, patientDetails);
 
 			patientResponse.setCode(0);
 			patientResponse.setResult("Success");
@@ -136,6 +86,7 @@ public class EhrController {
 	/* Find By ID */
 	@RequestMapping(value = "/patient/{id}")
 	public GetPatientResponseDTO getPatientById(@PathVariable(value = "id") Long patientId) {
+		GetPatientResponseDTO patientResponse = new GetPatientResponseDTO();
 		try {
 			Patient patient = patientService.getPatientById(patientId);
 
@@ -155,6 +106,7 @@ public class EhrController {
 	/* Find all */
 	@GetMapping(value = "/getAll")
 	public GetPatientListResponseDTO getAllPatients() {
+		GetPatientListResponseDTO listResponse = new GetPatientListResponseDTO();
 		List<Patient> list = patientService.getAllPatients();
 		if (list.size() >= 1) {
 			listResponse.setCode(0);
@@ -169,10 +121,31 @@ public class EhrController {
 		}
 		return listResponse;
 	} // findAll
+	
+	/* Find all Pagination */
+	@GetMapping(value="getAllPageable")
+	public GetPatientPageableResponseDTO getAllPatientsPageable(Pageable pageable, Sort sort ) {
+		GetPatientPageableResponseDTO pageableResponse = new GetPatientPageableResponseDTO();
+		
+		Page<Patient> patientPage = patientService.getAllPatientsPageable(pageable);
+		if (patientPage.isEmpty()) {
+			pageableResponse.setCode(1);
+			pageableResponse.setResult("Failure");
+			pageableResponse.setMessage("No patients were found");
+			pageableResponse.setPatientPageable(null);
+		} else {
+			pageableResponse.setCode(0);
+			pageableResponse.setResult("Success");
+			pageableResponse.setMessage("Patients' records retrieved successfully");
+			pageableResponse.setPatientPageable(patientPage);
+		}
+		return pageableResponse;
+	}
 
 	/* Delete Patient */
 	@DeleteMapping("/patient/{id}")
 	public BaseResponseDTO deleteById(@PathVariable(value = "id") Long patientId) {
+		BaseResponseDTO response = new BaseResponseDTO();
 		try {
 			patientService.deletePatient(patientId);
 
