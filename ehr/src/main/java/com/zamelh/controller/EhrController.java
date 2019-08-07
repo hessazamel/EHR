@@ -124,7 +124,7 @@ public class EhrController {
 	
 	/* Find all Pagination */
 	@GetMapping(value="getAllPageable")
-	public GetPatientPageableResponseDTO getAllPatientsPageable(Pageable pageable, Sort sort ) {
+	public GetPatientPageableResponseDTO getAllPatientsPageable(Pageable pageable) {
 		GetPatientPageableResponseDTO pageableResponse = new GetPatientPageableResponseDTO();
 		
 		Page<Patient> patientPage = patientService.getAllPatientsPageable(pageable);
